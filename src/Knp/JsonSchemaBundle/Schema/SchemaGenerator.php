@@ -2,6 +2,11 @@
 
 namespace Knp\JsonSchemaBundle\Schema;
 
+use Doctrine\Common\Annotations\Annotation;
+use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\Common\Annotations\Reader;
+use Doctrine\ODM\MongoDB\DocumentManager;
+use Doctrine\ODM\MongoDB\Mapping\Annotations\DiscriminatorMap;
 use Knp\JsonSchemaBundle\Reflection\ReflectionFactory;
 use Knp\JsonSchemaBundle\Schema\SchemaRegistry;
 use Knp\JsonSchemaBundle\Model\SchemaFactory;
@@ -20,6 +25,7 @@ class SchemaGenerator
     protected $propertyFactory;
     protected $propertyHandlers;
     protected $aliases = array();
+    protected $reader;
 
     public function __construct(
         \JsonSchema\Validator $jsonValidator,
@@ -27,7 +33,8 @@ class SchemaGenerator
         ReflectionFactory $reflectionFactory,
         SchemaRegistry $schemaRegistry,
         SchemaFactory $schemaFactory,
-        PropertyFactory $propertyFactory
+        PropertyFactory $propertyFactory,
+        Reader $reader
     ) {
         $this->jsonValidator     = $jsonValidator;
         $this->urlGenerator      = $urlGenerator;
@@ -36,36 +43,98 @@ class SchemaGenerator
         $this->schemaFactory     = $schemaFactory;
         $this->propertyFactory   = $propertyFactory;
         $this->propertyHandlers  = new \SplPriorityQueue;
+        $this->reader = $reader;
     }
+
+    protected function getUrlToAlias($alias) {
+        return $this->urlGenerator->generate('show_json_schema', array('alias' => $alias), true) . '#';
+    }
+
+    public function getRefToAlias($alias) {
+        return array('$ref' => $this->getUrlToAlias($alias));
+    }
+
+    public function getRefToClass($className) {
+        return $this->getRefToAlias($this->schemaRegistry->getAlias($className));
+    }
+
+    public function getOneOf($discriminatorMap) {
+        return array_values(array_map(function($className, $type) {
+            return array_merge(array('properties' => array('type' => array('type' => 'string', 'enum' => array($type)))), $this->getRefToClass($className));
+        }, $discriminatorMap, array_keys($discriminatorMap)));
+    }
+
+    /**
+     * @return null|array
+     */
+    protected function getDiscriminatorMapIfPolymorphic($className)
+    {
+        $reflectionClass = $this->reflectionFactory->create($className);
+        $annotations = $this->reader->getClassAnnotations($reflectionClass);
+        foreach($annotations as $annotation) {
+            if ($this->reflectionFactory->create($annotation)->getShortName() == 'DiscriminatorMap') {
+                /**
+                 * @var Annotation $annotation
+                 */
+                return $annotation->value;
+            }
+        }
+        return null;
+    }
+
+    public function getClassAnnotations($className){
+        $reflectionClass = $this->reflectionFactory->create($className);
+        $annotations = $this->reader->getClassAnnotations($reflectionClass);
+        if($parentClass = $reflectionClass->getParentClass()){
+            $parentAnnotations = $this->getClassAnnotations($parentClass->getName());
+            if(count($parentAnnotations) > 0)
+                $annotations = array_merge($annotations, $parentAnnotations);
+        }
+        return $annotations;
+    }
+
+    protected function isLinkingToOtherResource($className) {
+        $annotations = $this->getClassAnnotations($className);
+        foreach($annotations as $annotation) {
+            if (strpos(get_class($annotation), 'Hateoas') === 0) {
+                return true;
+            }
+        }
+        return null;
+    }
+
 
     public function generate($alias)
     {
         $this->aliases[] = $alias;
 
         $className = $this->schemaRegistry->getNamespace($alias);
-        $refl      = $this->reflectionFactory->create($className);
         $schema    = $this->schemaFactory->createSchema(ucfirst($alias));
 
-        $schema->setId($this->urlGenerator->generate('show_json_schema', array('alias' => $alias), true) . '#');
+        $schema->setId($this->getUrlToAlias($alias));
         $schema->setSchema(Schema::SCHEMA_V3);
         $schema->setType(Schema::TYPE_OBJECT);
-
-        foreach ($refl->getProperties() as $property) {
-            $property = $this->propertyFactory->createProperty($property->name);
-            $this->applyPropertyHandlers($className, $property);
-
-            if (!$property->isIgnored() && $property->hasType(Property::TYPE_OBJECT) && $property->getObject()) {
-                // Make sure that we're not creating a reference to the parent schema of the property
-                if (!in_array($property->getObject(), $this->aliases)) {
+        $discriminatorMap = $this->getDiscriminatorMapIfPolymorphic($className);
+        if (!empty($discriminatorMap) && !in_array($className, $discriminatorMap)) {
+            $schema->setOneOf($this->getOneOf($discriminatorMap));
+        } else {
+            foreach ($this->reflectionFactory->getClassProperties($className) as $property) {
+                $property = $this->propertyFactory->createProperty($property->name);
+                $this->applyPropertyHandlers($className, $property);
+                if (!$property->isIgnored() && $property->hasType(Property::TYPE_OBJECT) && $property->getObject() && is_null($property->getLink())) {
                     $property->setSchema(
                         $this->generate($property->getObject())
                     );
-                } else {
-                    $property->setIgnored(true);
+                }
+
+                if (!$property->isIgnored()) {
+                    $schema->addProperty($property);
                 }
             }
-
-            if (!$property->isIgnored()) {
+            if ($this->isLinkingToOtherResource($className)) {
+                $property = $this->propertyFactory->createProperty('_links');
+                $property->setType('object');
+                $property->setReadOnly(true);
                 $schema->addProperty($property);
             }
         }
@@ -114,12 +183,9 @@ class SchemaGenerator
     private function applyPropertyHandlers($className, Property $property)
     {
         $propertyHandlers = clone $this->propertyHandlers;
-
         while ($propertyHandlers->valid()) {
             $handler = $propertyHandlers->current();
-
             $handler->handle($className, $property);
-
             $propertyHandlers->next();
         }
     }

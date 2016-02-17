@@ -1,7 +1,7 @@
 show_json_schema:
-    path: /schemas/{alias}.json
-    defaults: { _controller: json_schema.controller:showAction }
+    path: /api/schemas/{alias}.json
+    defaults: { _controller: json_schema.controller:showAction, , _format: json }
 
 index_json_schema:
-    path: /schemas.json
-    defaults: { _controller: json_schema.controller:indexAction }
+    path: /api/schemas.json
+    defaults: { _controller: json_schema.controller:indexAction, _format: json }

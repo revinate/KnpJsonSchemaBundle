@@ -15,6 +15,7 @@ services:
             - @json_schema.registry
             - @json_schema.factory.schema
             - @json_schema.factory.property
+            - @annotation_reader
 
     json_schema.registry:
         public: false
@@ -53,14 +54,24 @@ services:
             - @json_schema.registry
             - @router
 
+
+    json_schema.property.handler.mongodb:
+        public: false
+        class: Knp\JsonSchemaBundle\Property\MongoDbTypeHandler
+        arguments:
+            - @service_container
+        tags:
+            - { name: json_schema.property.handler, priority: 5 }
+
     json_schema.property.handler.annotation:
         public: false
         class: Knp\JsonSchemaBundle\Property\JsonSchemaAnnotationHandler
         arguments:
             - @annotation_reader
             - @json_schema.reflection_factory
+            - @router
         tags:
-            - { name: json_schema.property.handler, priority: 0 }
+            - { name: json_schema.property.handler, priority: 8 }
 
     json_schema.property.handler.chained_guesser:
         public: false

@@ -13,6 +13,21 @@ class ReflectionFactory
         $this->filesystem = $filesystem;
     }
 
+    /**
+     * @param $className
+     * @return \ReflectionProperty[]
+     */
+    public function getClassProperties($className){
+        $ref = $this->create($className);
+        $props = $ref->getProperties();
+        if($parentClass = $ref->getParentClass()){
+            $parentProps = $this->getClassProperties($parentClass->getName());
+            if(count($parentProps) > 0)
+                $props = array_merge($props, $parentProps);
+        }
+        return $props;
+    }
+
     public function create($className)
     {
         return new \ReflectionClass($className);

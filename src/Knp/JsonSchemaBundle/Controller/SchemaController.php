@@ -44,7 +44,7 @@ class SchemaController
     {
         $data = array();
         foreach ($this->schemaRegistry->getAliases() as $alias) {
-            $data[$alias.'_url'] = $this->router->generate('show_json_schema', array('alias' => $alias), true);
+            $data[$alias] = $this->router->generate('show_json_schema', array('alias' => $alias), true);
         }
 
         return new JsonResponse($data);

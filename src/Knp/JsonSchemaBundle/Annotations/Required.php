@@ -6,10 +6,8 @@ namespace Knp\JsonSchemaBundle\Annotations;
  * @Annotation
  * @Target({"PROPERTY"})
  */
-class Enum
+class Required
 {
-    /** @var array */
-    public $enum;
-    /** @var array */
-    public $callback;
+    /** @var boolean */
+    public $isRequired = true;
 }

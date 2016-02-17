@@ -33,7 +33,9 @@ class Property implements \JsonSerializable
     protected $title;
     protected $description;
     protected $required = false;
+    protected $readOnly = false;
     protected $type = array();
+    protected $oneOf = array();
     protected $pattern;
     protected $enumeration = array();
     protected $minimum;
@@ -48,6 +50,13 @@ class Property implements \JsonSerializable
     protected $object;
     protected $multiple;
     protected $schema;
+    protected $polymorphicType;
+    protected $defaultValue;
+    /**
+     * @var Link|null
+     */
+    protected $link = null;
+
 
     public function setName($name)
     {
@@ -87,10 +96,7 @@ class Property implements \JsonSerializable
 
     public function setRequired($required)
     {
-        if (!$this->required) {
-            $this->required = $required;
-        }
-
+        $this->required = $required;
         return $this;
     }
 
@@ -305,12 +311,17 @@ class Property implements \JsonSerializable
     public function jsonSerialize()
     {
         $serialized = array();
+
         if (!empty($this->type)) {
             if (count($this->type) === 1) {
                 $serialized['type'] = $this->type[0];
             } else {
                 $serialized['type'] = $this->type;
             }
+        }
+
+        if ($this->readOnly) {
+            $serialized['readonly'] = $this->readOnly;
         }
 
         if ($this->pattern) {
@@ -357,6 +368,18 @@ class Property implements \JsonSerializable
             $serialized['disallow'] = $this->disallowed;
         }
 
+        if (!is_null($this->getLink())) {
+            $serialized['links'] = [$this->getLinkArray(true)];
+        }
+        if ($this->multiple && !$this->schema) {
+            $serialized = array('type' => 'array',
+                'items' => $serialized);
+        }
+
+        if ($this->defaultValue) {
+            $serialized['default'] = $this->defaultValue;
+        }
+
         if ($this->title) {
             $serialized['title'] = $this->title;
         }
@@ -364,11 +387,9 @@ class Property implements \JsonSerializable
         if ($this->description) {
             $serialized['description'] = $this->description;
         }
-
         if ($this->schema && $this->hasType(self::TYPE_OBJECT)) {
             $schema = $this->schema->jsonSerialize();
             unset($schema['$schema'], $schema['id']);
-
             if ($this->multiple) {
                 $serialized['type'] = 'array';
                 $serialized['items'] = $schema;
@@ -377,6 +398,99 @@ class Property implements \JsonSerializable
             }
         }
 
+        if ($this->oneOf) {
+            $serialized['oneOf'] = $this->oneOf;
+        }
+
         return $serialized;
+    }
+
+    /**
+     * @return array
+     */
+    public function getOneOf()
+    {
+        return $this->oneOf;
+    }
+
+    /**
+     * @param array $oneOf
+     */
+    public function setOneOf($oneOf)
+    {
+        $this->oneOf = $oneOf;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getPolymorphicType()
+    {
+        return $this->polymorphicType;
+    }
+
+    /**
+     * @param mixed $polymorphicType
+     */
+    public function setPolymorphicType($polymorphicType)
+    {
+        $this->polymorphicType = $polymorphicType;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isReadOnly()
+    {
+        return $this->readOnly;
+    }
+
+    /**
+     * @param boolean $readOnly
+     */
+    public function setReadOnly($readOnly)
+    {
+        $this->readOnly = $readOnly;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getDefaultValue()
+    {
+        return $this->defaultValue;
+    }
+
+    /**
+     * @param mixed $defaultValue
+     */
+    public function setDefaultValue($defaultValue)
+    {
+        $this->defaultValue = $defaultValue;
+    }
+
+    /**
+     * @return Link|null
+     */
+    public function getLink()
+    {
+        return $this->link;
+    }
+
+    /**
+     * @param Link|null $link
+     */
+    public function setLink($link)
+    {
+        $this->link = $link;
+    }
+
+    public function getLinkArray() {
+        $link = $this->getLink();
+        $linkArray = array('rel' => 'full', 'href' => $link->getHref());
+        if ($link->getMethod()) {
+            $linkArray['method'] = $link->getMethod();
+        }
+        return $linkArray;
     }
 }

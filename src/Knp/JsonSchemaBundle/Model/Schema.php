@@ -10,6 +10,7 @@ class Schema implements \JsonSerializable
     private $title;
     private $id;
     private $type;
+    private $oneOf = array();
     private $schema;
     private $properties;
 
@@ -30,7 +31,7 @@ class Schema implements \JsonSerializable
 
     public function addProperty(Property $property)
     {
-        $this->properties[$property->getName()] = $property;
+        $this->properties[strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $property->getName()))] = $property;
     }
 
     public function getId()
@@ -63,28 +64,47 @@ class Schema implements \JsonSerializable
         $this->schema = $schema;
     }
 
+    /**
+     * @return array
+     */
+    public function getOneOf()
+    {
+        return $this->oneOf;
+    }
+
+    /**
+     * @param array $oneOf
+     */
+    public function setOneOf($oneOf)
+    {
+        $this->oneOf = $oneOf;
+    }
+
     public function jsonSerialize()
     {
-        $properties = array();
-
-        foreach ($this->properties as $i => $property) {
-            $properties[$i] = $property->jsonSerialize();
-        }
-
         $serialized = array(
             'title'      => $this->title,
             'type'       => $this->type,
             '$schema'    => $this->schema,
-            'id'         => $this->id,
-            'properties' => $this->properties,
+            'id'         => $this->id
         );
 
-        $requiredProperties = array_keys(array_filter($this->properties, function ($property) {
-            return $property->isRequired();
-        }));
+        if ($this->oneOf) {
+            $serialized['oneOf'] = $this->oneOf;
+        } else {
+            $properties = array();
 
-        if (count($requiredProperties) > 0) {
-            $serialized['required'] = $requiredProperties;
+            foreach ($this->properties as $i => $property) {
+                $properties[$i] = $property->jsonSerialize();
+            }
+            $serialized['properties'] = $this->properties;
+            $requiredProperties = array_keys(array_filter($this->properties, function (Property $property) {
+                return $property->isRequired();
+            }));
+
+            if (count($requiredProperties) > 0) {
+                $serialized['required'] = $requiredProperties;
+            }
         }
 
         return $serialized;

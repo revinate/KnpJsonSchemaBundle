@@ -34,10 +34,9 @@ class RegisterJsonSchemasPass implements CompilerPassInterface
         $factory  = $container->get('json_schema.reflection_factory');
 
         $refClasses = $factory->createFromDirectory(
-            $this->bundle->getPath().'/'.$this->directory,
-            $this->bundle->getNamespace().'\\'.$this->directory
+            $this->directory ? $this->bundle->getPath().'/'.$this->directory : $this->bundle->getPath(),
+            $this->directory ? $this->bundle->getNamespace().'\\'.$this->directory : $this->bundle->getNamespace()
         );
-
         foreach ($refClasses as $refClass) {
             foreach ($reader->getClassAnnotations($refClass) as $annotation) {
                 if ($annotation instanceof \Knp\JsonSchemaBundle\Annotations\Schema) {

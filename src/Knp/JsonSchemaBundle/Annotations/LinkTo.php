@@ -6,10 +6,12 @@ namespace Knp\JsonSchemaBundle\Annotations;
  * @Annotation
  * @Target({"PROPERTY"})
  */
-class Enum
+class LinkTo
 {
+    /** @var string */
+    public $route;
     /** @var array */
-    public $enum;
-    /** @var array */
-    public $callback;
+    public $params;
+    /** @var string */
+    public $method = 'get';
 }

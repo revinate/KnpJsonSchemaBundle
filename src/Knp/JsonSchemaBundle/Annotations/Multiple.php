@@ -6,10 +6,6 @@ namespace Knp\JsonSchemaBundle\Annotations;
  * @Annotation
  * @Target({"PROPERTY"})
  */
-class Enum
+class Multiple
 {
-    /** @var array */
-    public $enum;
-    /** @var array */
-    public $callback;
 }
