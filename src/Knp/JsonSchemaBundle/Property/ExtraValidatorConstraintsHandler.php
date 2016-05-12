@@ -6,7 +6,7 @@ use Knp\JsonSchemaBundle\Model\Property;
 use Symfony\Component\Intl\Intl;
 use Symfony\Component\Intl\Locale\Locale;
 use Symfony\Component\Validator\Exception\ConstraintDefinitionException;
-use Symfony\Component\Validator\MetadataFactoryInterface;
+use Symfony\Component\Validator\Mapping\Factory\MetadataFactoryInterface;
 
 class ExtraValidatorConstraintsHandler implements PropertyHandlerInterface
 {

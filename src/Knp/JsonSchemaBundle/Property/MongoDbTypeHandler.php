@@ -43,7 +43,7 @@ class MongoDbTypeHandler implements PropertyHandlerInterface
              */
             $targetDocument = $targetDocumentClass->getReflectionClass()->newInstance();
             $resourceName = $targetDocument->getResourceType()->getValue();
-            $link->setHref($this->containerInterface->get('router')->generate("get_$resourceName", array('id' => '{$}' ), true));
+            $link->setHref($this->containerInterface->get('router')->generate("get_$resourceName", array('id' => '{$}' ), \Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_URL));
             $property->setLink($link);
         } else if ($metadata->hasEmbed($property->getName()) && !empty($metadata->fieldMappings[$property->getName()]['discriminatorMap'])) {
             $property->setType(Property::TYPE_OBJECT);

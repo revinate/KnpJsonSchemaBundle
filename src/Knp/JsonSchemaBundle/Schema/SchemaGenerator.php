@@ -47,7 +47,7 @@ class SchemaGenerator
     }
 
     protected function getUrlToAlias($alias) {
-        return $this->urlGenerator->generate('show_json_schema', array('alias' => $alias), true) . '#';
+        return $this->urlGenerator->generate('show_json_schema', array('alias' => $alias), \Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_URL) . '#';
     }
 
     public function getRefToAlias($alias) {

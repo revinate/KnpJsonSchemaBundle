@@ -101,7 +101,7 @@ class JsonSchemaAnnotationHandler implements PropertyHandlerInterface
             }
             if ($constraint instanceof \Knp\JsonSchemaBundle\Annotations\LinkTo) {
                 $link = new Link();
-                $link->setHref($this->router->generate($constraint->route, $constraint->params, true));
+                $link->setHref($this->router->generate($constraint->route, $constraint->params, \Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_URL));
                 $link->setMethod($constraint->method);
                 $property->setLink($link);
             }

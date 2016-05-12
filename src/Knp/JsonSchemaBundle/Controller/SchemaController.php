@@ -2,6 +2,7 @@
 
 namespace Knp\JsonSchemaBundle\Controller;
 
+use Hateoas\UrlGenerator\UrlGeneratorInterface;
 use Knp\JsonSchemaBundle\Schema\SchemaRegistry;
 use Knp\JsonSchemaBundle\Schema\SchemaGenerator;
 use Symfony\Component\Routing\RouterInterface;
@@ -44,7 +45,7 @@ class SchemaController
     {
         $data = array();
         foreach ($this->schemaRegistry->getAliases() as $alias) {
-            $data[$alias] = $this->router->generate('show_json_schema', array('alias' => $alias), true);
+            $data[$alias] = $this->router->generate('show_json_schema', array('alias' => $alias), \Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_URL);
         }
 
         return new JsonResponse($data);

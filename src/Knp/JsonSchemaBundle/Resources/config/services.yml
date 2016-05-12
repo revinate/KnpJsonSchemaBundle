@@ -2,20 +2,20 @@ services:
     json_schema.controller:
         class: Knp\JsonSchemaBundle\Controller\SchemaController
         arguments:
-            - @json_schema.registry
-            - @json_schema.generator
-            - @router
+            - '@json_schema.registry'
+            - '@json_schema.generator'
+            - '@router'
 
     json_schema.generator:
         class: Knp\JsonSchemaBundle\Schema\SchemaGenerator
         arguments:
-            - @json_schema.validator
-            - @router
-            - @json_schema.reflection_factory
-            - @json_schema.registry
-            - @json_schema.factory.schema
-            - @json_schema.factory.property
-            - @annotation_reader
+            - '@json_schema.validator'
+            - '@router'
+            - '@json_schema.reflection_factory'
+            - '@json_schema.registry'
+            - '@json_schema.factory.schema'
+            - '@json_schema.factory.property'
+            - '@annotation_reader'
 
     json_schema.registry:
         public: false
@@ -33,8 +33,8 @@ services:
         public: false
         class: Knp\JsonSchemaBundle\Reflection\ReflectionFactory
         arguments:
-            - @json_schema.finder
-            - @json_schema.filesystem
+            - '@json_schema.finder'
+            - '@json_schema.filesystem'
 
     json_schema.finder:
         public: false
@@ -51,15 +51,15 @@ services:
     json_schema.response.factory:
         class: Knp\JsonSchemaBundle\HttpFoundation\JsonResponseFactory
         arguments:
-            - @json_schema.registry
-            - @router
+            - '@json_schema.registry'
+            - '@router'
 
 
     json_schema.property.handler.mongodb:
         public: false
         class: Knp\JsonSchemaBundle\Property\MongoDbTypeHandler
         arguments:
-            - @service_container
+            - '@service_container'
         tags:
             - { name: json_schema.property.handler, priority: 5 }
 
@@ -67,9 +67,9 @@ services:
         public: false
         class: Knp\JsonSchemaBundle\Property\JsonSchemaAnnotationHandler
         arguments:
-            - @annotation_reader
-            - @json_schema.reflection_factory
-            - @router
+            - '@annotation_reader'
+            - '@json_schema.reflection_factory'
+            - '@router'
         tags:
             - { name: json_schema.property.handler, priority: 8 }
 
@@ -77,8 +77,8 @@ services:
         public: false
         class: Knp\JsonSchemaBundle\Property\FormTypeGuesserHandler
         arguments:
-            - @form.chain.guesser
-            - @json_schema.registry
+            - '@form.chain.guesser'
+            - '@json_schema.registry'
         tags:
             - { name: json_schema.property.handler, priority: 10 }
 
@@ -86,7 +86,7 @@ services:
         public: false
         class: Knp\JsonSchemaBundle\Property\ExtraValidatorConstraintsHandler
         arguments:
-            - @validator.mapping.class_metadata_factory
+            - '@validator.mapping.class_metadata_factory'
         tags:
             - { name: json_schema.property.handler, priority: 20 }
 
@@ -94,4 +94,4 @@ services:
         public: false
         class: Symfony\Component\Form\FormTypeGuesserChain
         arguments:
-            - [@form.type_guesser.validator, @json_schema.guesser]
+            - ['@form.type_guesser.validator','@json_schema.guesser']
